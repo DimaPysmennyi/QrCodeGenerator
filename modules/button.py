@@ -100,9 +100,10 @@ logo_qr_code_btn = ctk.CTkButton(
     fg_color = "#343638",
     hover_color = "#29292a",
     image = ctk.CTkImage(light_image = Image.open("+.png"), size = (10, 10)),
-    compound = "right"
+    compound = "right",
+    command = btn_func.logo
 )
-
+#
 design_img_qr_code_btn = ctk.CTkButton(
     master = appa.main_app.APP_FRAME,
     text = "Оберіть дизайн зображення QR коду",
@@ -114,7 +115,8 @@ design_img_qr_code_btn = ctk.CTkButton(
     fg_color = "#343638",
     hover_color = "#29292a",
     image = ctk.CTkImage(light_image = Image.open("+.png"), size = (10, 10)),
-    compound = "right"
+    compound = "right",
+    command=btn_func.design
 )
 
 qr_code_btn = ctk.CTkButton(
@@ -130,6 +132,45 @@ qr_code_btn = ctk.CTkButton(
     command = btn_func.make_qrcode
 )
 
+history_btn = ctk.CTkButton(
+    master = appa.main_app.APP_FRAME,
+    text = "Історія",
+    width = 280,
+    height = 70,
+    corner_radius = 20,
+    border_width = 3,
+    border_color = "#911CEE",
+    fg_color = "#343638",
+    hover_color = "#29292a",
+    command = btn_func.history
+)
+
+back_btn = ctk.CTkButton(
+    master = appa.main_app.HISTORY_FRAME,
+    text = "Назад",
+    width = 280,
+    height = 70,
+    corner_radius = 20,
+    border_width = 3,
+    border_color = "#911CEE",
+    fg_color = "#343638",
+    hover_color = "#29292a",
+    command = btn_func.back
+)
+
+avatar_btn = ctk.CTkButton(
+    master = appa.main_app.APP_FRAME,
+    text = "Аватар",
+    width = 80,
+    height = 50,
+    corner_radius = 20,
+    border_width = 3,
+    border_color = "#911CEE",
+    fg_color = "#343638",
+    hover_color = "#29292a",
+    command = btn_func.avatar
+    )
+
 verify_registration_btn.place(x = 440, y = 540)
 verify_authorization_btn.place(x = 430, y = 490)
 auth_btn.place(x = 440, y = 600)
@@ -139,3 +180,6 @@ img_color_btn.place(x = 20, y = 280)
 logo_qr_code_btn.place(x = 20, y = 390)
 design_img_qr_code_btn.place(x = 20, y = 500)
 qr_code_btn.place(x = 20, y = 610)
+history_btn.place(x = 700, y = 610)
+back_btn.place(x = 400, y = 50)
+avatar_btn.place(x = 780, y = 20)

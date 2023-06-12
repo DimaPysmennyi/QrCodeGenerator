@@ -3,11 +3,16 @@ import verify_email
 import modules.app as app
 import os
 import qrcode
+import mailtrap
 from qrcode.image.styledpil import StyledPilImage
 from PIL import Image
 
+from qrcode.image.styles.moduledrawers import RoundedModuleDrawer, GappedSquareModuleDrawer, CircleModuleDrawer, VerticalBarsDrawer, HorizontalBarsDrawer
+from qrcode.image.styles.colormasks import RadialGradiantColorMask, SquareGradiantColorMask, HorizontalGradiantColorMask, VerticalGradiantColorMask, ImageColorMask
+
 counter = 0
 reg = None
+
 
 def verify_registration():
     global reg
@@ -24,9 +29,18 @@ def verify_registration():
                         app.main_app.CURSOR.execute("INSERT INTO Users (username, password, email) VALUES (?, ?, ?)", (app.main_app.ENTRY_LOGIN._textvariable.get(), app.main_app.ENTRY_PASSWORD._textvariable.get(), app.main_app.ENTRY_EMAIL._textvariable.get()))
                         app.main_app.DATABASE_CONNECTION.commit()
                         # print("Тут має фрейм перемикатися")
-                        app.main_app.APP_FRAME.place(x = 5, y = 5)
+                        # app.main_app.APP_FRAME.place(x = 5, y = 5)
                         os.mkdir(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}")
                         reg = True
+                        
+                        email = mailtrap.Mail(
+                            sender = mailtrap.Address(email = "qrcodeapppractice@gmail.com", name = "QRCode App"),
+                            to = [mailtrap.Address(email = app.main_app.ENTRY_EMAIL._textvariable.get())],
+                            subject = "Підтвердження реєстрації",
+                            text = "Вітаю! Ви зарєструвалися у базі даних!"
+                        )
+                        client = mailtrap.MailtrapClient(token = "908c142eedacd3dcd663ec20f1eb39ae")
+                        client.send(email)
                         # os.chdir(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}")
 
 
@@ -38,6 +52,13 @@ def verify_authorization():
             # print("Тут має фрейм перемикатися, але не")
             app.main_app.APP_FRAME.place(x = 5, y = 5)
             reg = False
+            
+            try:
+                app.main_app.AVATAR_IMAGE = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/avatar.png"), size = (115, 115))
+                app.main_app.AVATAR_LABEL = ctk.CTkLabel(master = app.main_app.AVATAR_FRAME, text = "", image = app.main_app.AVATAR_IMAGE)
+                app.main_app.AVATAR_LABEL.place(x = 17, y = 17)
+            except:
+                pass
 
 def auth_tab():
     app.main_app.REGISTRATION_FRAME.place_forget()
@@ -50,39 +71,139 @@ def register_tab():
 
 
 def make_qrcode():
-    global counter 
-    QRCode = qrcode.QRCode(
-        version = 1,
-        error_correction = qrcode.constants.ERROR_CORRECT_L,
-        box_size = 10
-    )
-    try:
-        counter += 1
-        QRCode.add_data(app.main_app.URL_ENTRY._textvariable.get())
-        QRCode.make(True)
-        file = QRCode.make_image(back_color = app.main_app.IMAGE_COLOR, fill_color = app.main_app.BG_COLOR)
-        if reg == True:
-            file.save(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}/{counter}.png")
-            app.main_app.IMAGE_LABEL = ctk.CTkLabel(
-                master = app.main_app.QR_CODE_FRAME, 
-                text = "", 
-                image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}/{counter}.png"), size = (280, 280))
-            )
-        if reg == False:
-            file.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{counter}.png")
-            app.main_app.IMAGE_LABEL = ctk.CTkLabel(
-                master = app.main_app.QR_CODE_FRAME, 
-                text = "", 
-                image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{counter}.png"), size = (280, 280))
-            )
-        app.main_app.IMAGE_LABEL.place(x = 0, y = 0)
+    if app.main_app.URL_ENTRY._textvariable.get():
+        win1 = ctk.CTkToplevel(app.main_app)
+        win1.resizable(False, False)
+        win1.geometry(f"{535}x{260}+{0}+{0}")
+        win1.title("Збереження")
+        win1.focus()
+        entry = ctk.CTkEntry(
+            master = win1, 
+            width = 400, height = 150, 
+            textvariable = ctk.StringVar(), 
+            border_color = "#911CEE", 
+            font = ctk.CTkFont("Arial", 30),
+            corner_radius=20
+        )
+        
+        entry.place(x = 67, y = 10)
+        
+        def onButtonPressed():
+            
+            if entry._textvariable.get():
+                QRCode = qrcode.QRCode(
+                    version = 1,
+                    error_correction = qrcode.constants.ERROR_CORRECT_L,
+                    box_size = 10
+                )
+                try:
+                    QRCode.add_data(app.main_app.URL_ENTRY._textvariable.get())
+                    QRCode.make(True)
+                    if app.main_app.GRADIENT:
+                        if app.main_app.LOGO:
+                            file = QRCode.make_image(
+                                back_color = app.main_app.IMAGE_COLOR, 
+                                fill_color = app.main_app.BG_COLOR,
+                                image_factory = StyledPilImage,
+                                color_mask = ImageColorMask(back_color = (255, 255, 255)),
+                                color_mask_image = app.main_app.LOGO
+                            )                           
+                        else:
+                            file = QRCode.make_image(
+                                back_color = app.main_app.IMAGE_COLOR, 
+                                fill_color = app.main_app.BG_COLOR, 
+                                color_mask = app.main_app.GRADIENT, 
+                                image_factory = StyledPilImage,
+                            )
 
-    except:
-        print("Введи нормально, а потім кнопку натискай, бидле")
+                    if app.main_app.MODULE_DRAWER:
+                        if app.main_app.LOGO:
+                            file = QRCode.make_image(
+                                back_color = app.main_app.IMAGE_COLOR, 
+                                fill_color = app.main_app.BG_COLOR,
+                                image_factory = StyledPilImage,
+                                color_mask = ImageColorMask(back_color = (255, 255, 255)),
+                                color_mask_image = app.main_app.LOGO
+                            )
+                        else:
+                            file = QRCode.make_image(
+                                back_color = app.main_app.IMAGE_COLOR, 
+                                fill_color = app.main_app.BG_COLOR, 
+                                module_drawer = app.main_app.MODULE_DRAWER, 
+                                image_factory = StyledPilImage
+                            )
+
+                    if not app.main_app.MODULE_DRAWER and not app.main_app.GRADIENT:
+                        if app.main_app.LOGO:
+                            file = QRCode.make_image(
+                                back_color = app.main_app.IMAGE_COLOR, 
+                                fill_color = app.main_app.BG_COLOR,
+                                image_factory = StyledPilImage,
+                                color_mask = ImageColorMask(back_color = (255, 255, 255)),
+                                color_mask_image = app.main_app.LOGO
+                            )
+                        else:
+                            file = QRCode.make_image(
+                                back_color = app.main_app.IMAGE_COLOR,
+                                fill_color = app.main_app.BG_COLOR
+                            )
+
+                    
+
+                    if reg == True:
+                        file.save(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}/{entry._textvariable.get()}")
+                        app.main_app.IMAGE_LABEL = ctk.CTkLabel(
+                            master = app.main_app.QR_CODE_FRAME, 
+                            text = "", 
+                            image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}/{entry._textvariable.get()}"), size = (280, 280))
+                        )
+                    if reg == False:
+                        file.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{entry._textvariable.get()}")
+                        app.main_app.IMAGE_LABEL = ctk.CTkLabel(
+                            master = app.main_app.QR_CODE_FRAME, 
+                            text = "", 
+                            image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{entry._textvariable.get()}"), size = (280, 280))
+                        )
+
+                    app.main_app.IMAGE_LABEL.place(x = 0, y = 0)
+
+                    app.main_app.MODULE_DRAWER = None
+                    app.main_app.GRADIENT = None
+                    app.main_app.BG_COLOR = (0, 0, 0)
+                    app.main_app.IMAGE_COLOR = (255, 255, 255)
+                    app.main_app.LOGO = None
+
+                    win1.destroy()
+
+                except:
+                    print("Помилка")
+        
+        bb = ctk.CTkButton(
+            master = win1,
+            width = 100,
+            height = 75,
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text = "Пiдтвердити",
+            command = onButtonPressed
+        )
+
+        bb.place(x = 217, y = 170)
+
+        
 
 def bg_color():
+    win = ctk.CTkToplevel(app.main_app)
+    win.resizable(False, False)
+    win.geometry(f"{545}x{270}+{0}+{0}")
+    win.title("Колір фону")
+    win.focus()
+    
     frame = ctk.CTkFrame(
-        master = app.main_app.APP_FRAME, 
+        master = win, 
         width = 535, 
         height = 260,
         corner_radius = 20,
@@ -93,6 +214,7 @@ def bg_color():
     def change_bg_color():
         app.main_app.BG_COLOR = (int(bg_color_entry_r._textvariable.get()), int(bg_color_entry_g._textvariable.get()), int(bg_color_entry_b._textvariable.get()))
         frame.place_forget()
+        win.destroy()
 
     bg_color_entry_r = ctk.CTkEntry(
         master = frame, 
@@ -147,12 +269,18 @@ def bg_color():
     g_label.place(x = 240, y = 20)
     b_label.place(x = 300, y = 20)
 
-    frame.place(x = 267, y = 225)
+    frame.place(x = 5, y = 5)
 
 
 def image_color():
+    win = ctk.CTkToplevel(app.main_app)
+    win.resizable(False, False)
+    win.geometry(f"{545}x{270}+{0}+{0}")
+    win.title("Колір зображення")
+    win.focus()
+
     frame = ctk.CTkFrame(
-        master = app.main_app.APP_FRAME, 
+        master = win, 
         width = 535, 
         height = 260,
         corner_radius = 20,
@@ -163,6 +291,7 @@ def image_color():
     def change_image_color():
         app.main_app.IMAGE_COLOR = (int(image_color_entry_r._textvariable.get()), int(image_color_entry_g._textvariable.get()), int(image_color_entry_b._textvariable.get()))
         frame.place_forget()
+        win.destroy()
 
     image_color_entry_r = ctk.CTkEntry(
         master = frame, 
@@ -216,63 +345,324 @@ def image_color():
     g_label.place(x = 240, y = 20)
     b_label.place(x = 300, y = 20)
 
-    frame.place(x = 267, y = 225)
+    frame.place(x = 5, y = 5)
 
-# def version():
-#     frame = ctk.CTkFrame(
-#         master = app.main_app.APP_FRAME, 
-#         width = 535, 
-#         height = 260,
-#         corner_radius = 20,
-#         border_width = 3,
-#         border_color = "#911CEE"
-#     )
+def logo():
+    win = ctk.CTkToplevel(app.main_app)
+    win.resizable(False, False)
+    win.geometry(f"{545}x{270}+{0}+{0}")
+    win.title("Логотип")
+    win.focus()
 
-#     def change_image_color():
-#         app.main_app.IMAGE_COLOR = (int(image_color_entry_r._textvariable.get()), int(image_color_entry_g._textvariable.get()), int(image_color_entry_b._textvariable.get()))
-#         frame.place_forget()
+    def find_path():
+        filename = ctk.filedialog.askopenfilename(filetypes = [("PNG", ".png"), ("JPEG", ".jpg .jpeg"), ("SVG", ".svg")])
+        app.main_app.LOGO = Image.open(filename)    
 
-#     image_color_entry_r = ctk.CTkEntry(
-#         master = frame, 
-#         width = 50, 
-#         height = 50, 
-#         # corner_radius = 20, 
-#         # border_width = 3, 
-#         # border_color = "#911CEE", 
-#         textvariable = ctk.StringVar(),
-#     )
-#     image_color_entry_g = ctk.CTkEntry(
-#         master = frame, 
-#         width = 50, 
-#         height = 50, 
-#         # corner_radius = 20, 
-#         # border_width = 3, 
-#         # border_color = "#911CEE", 
-#         textvariable = ctk.StringVar(),
-#     )
-#     image_color_entry_b = ctk.CTkEntry(
-#         master = frame, 
-#         width = 50, 
-#         height = 50, 
-#         # corner_radius = 20, 
-#         # border_width = 3, 
-#         # border_color = "#911CEE", 
-#         textvariable = ctk.StringVar(),
-#     )
-#     confirm_button = ctk.CTkButton(
-#         master = frame, 
-#         width = 235, 
-#         height = 100, 
-#         corner_radius = 20, 
-#         border_width = 3, 
-#         border_color = "#911CEE",
-#         fg_color = "#343638",
-#         hover_color = "#29292a",
-#         text = "Підтвердити",
-#         command = change_image_color,
-#     )
+        frame.place_forget()
+        win.destroy()
 
-#     image_color_entry_r.place(x = 180, y = 50)
-#     confirm_button.place(x = 150, y = 120)
+    frame = ctk.CTkFrame(
+        master = win, 
+        width = 535, 
+        height = 260,
+        corner_radius = 20,
+        border_width = 3,
+        border_color = "#911CEE" 
+    )
+    
+    find_path_btn = ctk.CTkButton(
+        master = frame, 
+        width = 335,
+        height = 100,
+        corner_radius = 20,
+        border_width = 3,
+        border_color = "#911CEE",
+        fg_color = "#343638",
+        hover_color = "#29292a",
+        command = find_path,
+        text = "Обрати картинку"
+        
+    )
+    
+    find_path_btn.place(x = 100, y = 80)
 
-#     frame.place(x = 267, y = 225)
+    frame.place(x = 5, y = 5)
+    # app.main_app.LOGO = 
+
+
+def design():
+    # Дiма альо
+    win = ctk.CTkToplevel(app.main_app)
+    win.resizable(False, False)
+    win.geometry(f"{545}x{270}+{0}+{0}")
+    win.title("Логотип")
+    win.focus()
+    
+    def gradient():
+        button_module_drawer.place_forget()
+        button_gradient.place_forget()
+
+        def radial_gradient():
+            app.main_app.GRADIENT = RadialGradiantColorMask()
+            frame.place_forget()
+            win.destroy()
+
+        def square_gradient():
+            app.main_app.GRADIENT = SquareGradiantColorMask()
+            frame.place_forget()
+            win.destroy()
+
+        def horizontal_gradient():
+            app.main_app.GRADIENT = HorizontalGradiantColorMask()
+            frame.place_forget()
+            win.destroy()
+
+        def vertical_gradient():
+            app.main_app.GRADIENT = VerticalGradiantColorMask()
+            frame.place_forget()
+            win.destroy()
+
+        # def image_color_mask():
+        #     app.main_app.GRADIENT = ImageColorMask()
+        #     frame.place_forget()
+        #     win.destroy()
+
+        button_radial_gradient = ctk.CTkButton(
+            master = frame, 
+            width = 335, 
+            height = 40, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text =  "Radial Gradient",
+            command = radial_gradient
+        )
+
+        button_square_gradient = ctk.CTkButton(
+            master = frame, 
+            width = 335, 
+            height = 40, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text =  "Square Gradient",
+            command = square_gradient
+        )
+
+        button_horizontal_gradient = ctk.CTkButton(
+            master = frame, 
+            width = 335, 
+            height = 40, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text =  "Horizontal Gradient",
+            command = horizontal_gradient
+        )
+
+        button_vertical_gradient = ctk.CTkButton(
+            master = frame, 
+            width = 335, 
+            height = 40, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text =  "Vertical Gradient",
+            command = vertical_gradient
+        )
+
+        # button_image_color_mask = ctk.CTkButton(
+        #     master = frame, 
+        #     width = 335, 
+        #     height = 40, 
+        #     corner_radius = 20,
+        #     border_width = 3,
+        #     border_color = "#911CEE",
+        #     fg_color = "#343638",
+        #     hover_color = "#29292a",
+        #     text =  "Image Color Mask",
+        #     command = image_color_mask
+        # )
+
+        button_radial_gradient.place(x = 10,y = 10)
+        button_square_gradient.place(x = 10,y = 60)
+        button_horizontal_gradient.place(x = 10,y = 100)
+        button_vertical_gradient.place(x = 10,y = 140)
+        # button_image_color_mask.place(x = 10,y = 180)     
+
+    def module_drawer():
+        button_module_drawer.place_forget()
+        button_gradient.place_forget()
+
+        def gapped_square():
+            app.main_app.MODULE_DRAWER = GappedSquareModuleDrawer()
+            frame.place_forget()
+            win.destroy()
+        
+        def circle_module():
+            app.main_app.MODULE_DRAWER = CircleModuleDrawer()
+            frame.place_forget()
+            win.destroy()
+
+        def rounded():
+            app.main_app.MODULE_DRAWER = RoundedModuleDrawer()
+            frame.place_forget()
+            win.destroy()
+        
+        def vertical_bars():
+            app.main_app.MODULE_DRAWER = VerticalBarsDrawer()
+            frame.place_forget()
+            win.destroy()
+
+        def horizontal_bars():
+            app.main_app.MODULE_DRAWER = HorizontalBarsDrawer()
+            frame.place_forget()
+            win.destroy()
+
+        button_gapped_square = ctk.CTkButton(
+            master = frame, 
+            width = 335, 
+            height = 40, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text =  "Gapped Square",
+            command = gapped_square
+        )
+        
+        button_circle = ctk.CTkButton(
+            master = frame, 
+            width = 335, 
+            height = 40, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text =  "Circle",
+            command = circle_module
+        )
+
+        button_rounded = ctk.CTkButton(
+            master = frame, 
+            width = 335, 
+            height = 40, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text =  "Rounded",
+            command = rounded
+        )
+
+        button_vertical_bars = ctk.CTkButton(
+            master = frame, 
+            width = 335, 
+            height = 40, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text =  "Vertical Bars",
+            command = vertical_bars
+        )
+
+        button_horizontal_bars = ctk.CTkButton(
+            master = frame, 
+            width = 335, 
+            height = 40, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638",
+            hover_color = "#29292a",
+            text =  "Horizontal Bars",
+            command = horizontal_bars
+        )
+
+        button_gapped_square.place(x = 10, y = 10)
+        button_circle.place(x = 10, y = 60)
+        button_rounded.place(x = 10, y =100)
+        button_vertical_bars.place(x = 10, y = 140)
+        button_horizontal_bars.place(x = 10, y = 180)
+    
+    frame = ctk.CTkFrame(
+        master= win, 
+        width = 535, 
+        height = 260, 
+        corner_radius=20, 
+        border_width = 3,
+        border_color = "#911CEE"
+    )
+
+    button_module_drawer = ctk.CTkButton(
+        master = frame, 
+        width = 335, 
+        height = 100, 
+        corner_radius = 20,
+        border_width = 3,
+        border_color = "#911CEE",
+        fg_color = "#343638",
+        hover_color = "#29292a",
+        text =  "Фільтри",
+        command = module_drawer
+    )
+
+    button_gradient = ctk.CTkButton(
+        master=frame, 
+        width = 335, 
+        height = 100, 
+        corner_radius = 20,
+        border_width = 3,
+        border_color = "#911CEE",
+        fg_color = "#343638",
+        hover_color = "#29292a",
+        text="Градiент",
+        command= gradient
+    )
+
+    frame.place(x = 5, y = 5)
+    
+
+    button_module_drawer.place(x = 10, y = 30)
+    button_gradient.place(x = 10, y = 140)
+
+def history():
+    app.main_app.APP_FRAME.place_forget()
+    app.main_app.HISTORY_FRAME.place(x = 5, y = 5)
+    counter = 0
+    for filename in os.listdir(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}"):
+        if filename != "avatar.png":
+            label = ctk.CTkLabel(master = app.main_app.SCROLLABLE_FRAME, text = filename, font = ctk.CTkFont("Arial", 30))
+            label.grid(row = counter, column = 0)
+    
+            counter += 1
+
+def back():
+    app.main_app.HISTORY_FRAME.place_forget()
+    app.main_app.APP_FRAME.place(x = 5, y = 5)
+
+
+
+def avatar():
+    file = ctk.filedialog.askopenfilename(filetypes = [("PNG", ".png"), ("JPEG", ".jpg .jpeg"), ("SVG", ".svg")])
+    image = Image.open(file)
+    image.resize((147, 147))
+    image = image.save(fp = f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/avatar.png")
+    app.main_app.AVATAR_IMAGE = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/avatar.png"), size = (115, 115))
+    app.main_app.AVATAR_LABEL.place_forget()
+    app.main_app.AVATAR_LABEL = ctk.CTkLabel(master = app.main_app.AVATAR_FRAME, image = app.main_app.AVATAR_IMAGE, text = "")
+    app.main_app.AVATAR_LABEL.place(x = 17, y = 17)
+

@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import sqlite3 
+from PIL import Image
 
 class App(ctk.CTk):
     def __init__(self):
@@ -16,7 +17,7 @@ class App(ctk.CTk):
         self.REGISTRATION_FRAME = ctk.CTkFrame(master = self, width = 1070, height = 710, corner_radius = 20, border_width = 3, border_color = "#911CEE")
         # self.REGISTRATION_FRAME.place(x = 5, y = 5)
         self.REGISTRATION_FRAME.place(x = 5, y = 5)
-
+        
         self.REGISTRATION_LABEL = ctk.CTkLabel(master = self.REGISTRATION_FRAME, text = "Реєстрація", font = ctk.CTkFont(family = "Arial", size = 30))
         self.REGISTRATION_LABEL.place(x = 475, y = 10)
 
@@ -29,6 +30,8 @@ class App(ctk.CTk):
         self.ENTRY_EMAIL.place(x = 300, y = 190)
         self.ENTRY_PASSWORD.place(x = 300, y = 300)
         self.ENTRY_REPEAT.place(x = 300, y = 410)
+        
+
 
         self.AUTHORIZATION_FRAME = ctk.CTkFrame(master = self, width = 1070, height = 710, corner_radius = 20, border_width = 3, border_color = "#911CEE")
         
@@ -79,9 +82,52 @@ class App(ctk.CTk):
 
         self.QR_CODE_FRAME = ctk.CTkFrame(master = self.APP_FRAME, width = 280, height = 280, corner_radius = 20, border_width = 3, border_color = "#911CEE")
         self.QR_CODE_FRAME.place(x = 700, y = 280)
+        
+        self.HISTORY_FRAME = ctk.CTkFrame(
+            master = self,
+            width = 1070,
+            height = 710, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE"
+        )
+
+        self.SCROLLABLE_FRAME = ctk.CTkScrollableFrame(
+            master = self.HISTORY_FRAME,
+            width = 1015, 
+            height = 520,
+            corner_radius = 20,
+            border_width = 3
+        )
+        
+        self.SCROLLABLE_FRAME.place(x = 10, y = 130)
+
+        self.HISTORY_LABEL = ctk.CTkLabel(master = self.HISTORY_FRAME, text = "Історія QR-кодів", font = ctk.CTkFont("Arial", 30))
+        self.HISTORY_LABEL.place(x = 400, y = 10)
+        
+        self.AVATAR_FRAME = ctk.CTkFrame(
+            master = self.APP_FRAME, 
+            width = 150, 
+            height = 150, 
+            corner_radius = 20,
+            border_width = 3,
+            border_color = "#911CEE",
+            fg_color = "#343638"
+        )
+        self.AVATAR_FRAME.place(x = 880, y = 20)
+
+        # self.AVATAR_IMAGE = ctk.CTkImage(light_image = Image.open(f"users/{self.ENTRY_USERNAME_AUTH._textvariable.get()}/avatar.png"))
+
+        self.AVATAR_IMAGE = None
+        self.AVATAR_LABEL = None
+
+        # print("ексепт")
 
         self.IMAGE_LABEL = None
         self.BG_COLOR = (0, 0, 0)
-        self.IMAGE_COLOR = (0, 0, 0)
+        self.IMAGE_COLOR = (255, 255, 255)
+        self.LOGO = None
+        self.GRADIENT = None
+        self.MODULE_DRAWER = None
 
 main_app = App()
