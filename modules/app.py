@@ -1,6 +1,8 @@
 import customtkinter as ctk
 import sqlite3 
+import tkinter as tk
 from PIL import Image
+
 
 class App(ctk.CTk):
     def __init__(self):
@@ -13,6 +15,9 @@ class App(ctk.CTk):
         self.USERS = '''
             CREATE TABLE IF NOT EXISTS Users (id integer PRIMARY KEY, username TEXT, password TEXT, email TEXT)
         '''
+        self.iconbitmap("icon.ico")
+        
+
         self.CURSOR.execute(self.USERS)
         self.REGISTRATION_FRAME = ctk.CTkFrame(master = self, width = 1070, height = 710, corner_radius = 20, border_width = 3, border_color = "#911CEE")
         # self.REGISTRATION_FRAME.place(x = 5, y = 5)
@@ -103,7 +108,7 @@ class App(ctk.CTk):
         self.SCROLLABLE_FRAME.place(x = 10, y = 130)
 
         self.HISTORY_LABEL = ctk.CTkLabel(master = self.HISTORY_FRAME, text = "Історія QR-кодів", font = ctk.CTkFont("Arial", 30))
-        self.HISTORY_LABEL.place(x = 400, y = 10)
+        self.HISTORY_LABEL.place(x = 420, y = 10)
         
         self.AVATAR_FRAME = ctk.CTkFrame(
             master = self.APP_FRAME, 
@@ -120,6 +125,7 @@ class App(ctk.CTk):
 
         self.AVATAR_IMAGE = None
         self.AVATAR_LABEL = None
+
 
         # print("ексепт")
 

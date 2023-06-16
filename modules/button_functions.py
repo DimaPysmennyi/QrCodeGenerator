@@ -3,7 +3,10 @@ import verify_email
 import modules.app as app
 import os
 import qrcode
-import mailtrap
+import ssl
+import smtplib
+import threading
+from email.message import EmailMessage
 from qrcode.image.styledpil import StyledPilImage
 from PIL import Image
 
@@ -12,36 +15,89 @@ from qrcode.image.styles.colormasks import RadialGradiantColorMask, SquareGradia
 
 counter = 0
 reg = None
+email_check = False
+username_check = False
 
 
 def verify_registration():
+    global email_check
+    global username_check
     global reg
+
     if app.main_app.ENTRY_LOGIN._textvariable.get() and app.main_app.ENTRY_EMAIL._textvariable.get() and app.main_app.ENTRY_PASSWORD._textvariable.get() and app.main_app.ENTRY_REPEAT._textvariable.get():
         verification_email = verify_email.verify_email(app.main_app.ENTRY_EMAIL._textvariable.get())
         if verification_email == True:
             if app.main_app.ENTRY_PASSWORD._textvariable.get() == app.main_app.ENTRY_REPEAT._textvariable.get():
                 username_data = app.main_app.CURSOR.execute("SELECT username FROM Users").fetchall()
+                username_check = False
+                email_check = False
                 print(username_data)
-                if not (app.main_app.ENTRY_LOGIN._textvariable.get()) in username_data:
+                for client in username_data:
+                    if client[0] != app.main_app.ENTRY_LOGIN._textvariable.get():
+                        continue
+                    else:
+                        username_check = True
+
+                if username_check == False:
                     email_data = app.main_app.CURSOR.execute("SELECT email FROM Users").fetchall()
-                    print(email_data)
-                    if not (app.main_app.ENTRY_EMAIL._textvariable.get()) in email_data:
+                    for email in email_data:
+                        if email[0] != app.main_app.ENTRY_EMAIL._textvariable.get():
+                            continue
+                        else:
+                            email_check = True
+
+                    if email_check == False:
                         app.main_app.CURSOR.execute("INSERT INTO Users (username, password, email) VALUES (?, ?, ?)", (app.main_app.ENTRY_LOGIN._textvariable.get(), app.main_app.ENTRY_PASSWORD._textvariable.get(), app.main_app.ENTRY_EMAIL._textvariable.get()))
                         app.main_app.DATABASE_CONNECTION.commit()
-                        # print("Тут має фрейм перемикатися")
-                        # app.main_app.APP_FRAME.place(x = 5, y = 5)
-                        os.mkdir(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}")
-                        reg = True
                         
-                        email = mailtrap.Mail(
-                            sender = mailtrap.Address(email = "qrcodeapppractice@gmail.com", name = "QRCode App"),
-                            to = [mailtrap.Address(email = app.main_app.ENTRY_EMAIL._textvariable.get())],
-                            subject = "Підтвердження реєстрації",
-                            text = "Вітаю! Ви зарєструвалися у базі даних!"
-                        )
-                        client = mailtrap.MailtrapClient(token = "908c142eedacd3dcd663ec20f1eb39ae")
-                        client.send(email)
-                        # os.chdir(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}")
+                        try:
+                            os.mkdir(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}")
+                            reg = True
+                            win = ctk.CTkToplevel()
+                            win.title("Реєстрація")
+                            win.resizable(False, False)
+                            win.geometry(f"{250}x{100}")
+                            win.attributes("-topmost", True)
+                            label = ctk.CTkLabel(master = win, text = "Вас успішно зареєстровано!", font = ctk.CTkFont("Arial", 17))
+                            label.place(x = 5, y = 40)
+                            win.mainloop()
+
+
+                            email_sender = "qrcodeapppractice@gmail.com"
+                            email_password = "hdrbysjdwauhxkqt"
+                            email_receiver = app.main_app.ENTRY_EMAIL._textvariable.get()
+                            email_subject = "Реєстрація у TriangleMonkey"
+                            email_body = "Вітаю! Ви зареєструвалися у базі даних TriangleMonkey!"
+                            email = EmailMessage()
+                            email["From"] = email_sender
+                            email["To"] = email_receiver
+                            email["Subject"] = email_subject
+                            email.set_content(email_body)
+                            context = ssl.create_default_context()
+                            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context = context) as smtp:
+                                smtp.login(email_sender, email_password)
+                                smtp.sendmail(email_sender, email_receiver, email.as_string())
+                        except:
+                            pass
+
+
+                    else:
+                        win = ctk.CTkToplevel()
+                        win.title("Помилка")
+                        win.resizable(False, False)
+                        win.geometry(f"{535}x{160}")
+                        win.attributes("-topmost", True)
+                        label = ctk.CTkLabel(master = win, text = "Такий нік або e-mail вже зареєстровано!", font = ctk.CTkFont("Arial", 20), text_color = "red")
+                        label.place(x = 75, y = 60)
+                        
+                else:
+                    win = ctk.CTkToplevel()
+                    win.title("Помилка")
+                    win.resizable(False, False)
+                    win.geometry(f"{535}x{160}")
+                    win.attributes("-topmost", True)
+                    label = ctk.CTkLabel(master = win, text = "Такий нік або e-mail вже зареєстровано!", font = ctk.CTkFont("Arial", 20), text_color = "red")
+                    label.place(x = 75, y = 60)
 
 
 def verify_authorization():
@@ -76,7 +132,7 @@ def make_qrcode():
         win1.resizable(False, False)
         win1.geometry(f"{535}x{260}+{0}+{0}")
         win1.title("Збереження")
-        win1.focus()
+        win1.attributes("-topmost", True)
         entry = ctk.CTkEntry(
             master = win1, 
             width = 400, height = 150, 
@@ -89,96 +145,91 @@ def make_qrcode():
         entry.place(x = 67, y = 10)
         
         def onButtonPressed():
-            
             if entry._textvariable.get():
                 QRCode = qrcode.QRCode(
                     version = 1,
                     error_correction = qrcode.constants.ERROR_CORRECT_L,
                     box_size = 10
                 )
-                try:
-                    QRCode.add_data(app.main_app.URL_ENTRY._textvariable.get())
-                    QRCode.make(True)
-                    if app.main_app.GRADIENT:
-                        if app.main_app.LOGO:
-                            file = QRCode.make_image(
-                                back_color = app.main_app.IMAGE_COLOR, 
-                                fill_color = app.main_app.BG_COLOR,
-                                image_factory = StyledPilImage,
-                                color_mask = ImageColorMask(back_color = (255, 255, 255)),
-                                color_mask_image = app.main_app.LOGO
-                            )                           
-                        else:
-                            file = QRCode.make_image(
-                                back_color = app.main_app.IMAGE_COLOR, 
-                                fill_color = app.main_app.BG_COLOR, 
-                                color_mask = app.main_app.GRADIENT, 
-                                image_factory = StyledPilImage,
-                            )
+                # try:
+                QRCode.add_data(app.main_app.URL_ENTRY._textvariable.get())
+                QRCode.make(True)
+                if app.main_app.GRADIENT:
+                    if app.main_app.LOGO:
+                        file = QRCode.make_image(
+                            back_color = app.main_app.IMAGE_COLOR, 
+                            fill_color = app.main_app.BG_COLOR,
+                            image_factory = StyledPilImage,
+                            color_mask = ImageColorMask(color_mask_image = app.main_app.LOGO),
 
-                    if app.main_app.MODULE_DRAWER:
-                        if app.main_app.LOGO:
-                            file = QRCode.make_image(
-                                back_color = app.main_app.IMAGE_COLOR, 
-                                fill_color = app.main_app.BG_COLOR,
-                                image_factory = StyledPilImage,
-                                color_mask = ImageColorMask(back_color = (255, 255, 255)),
-                                color_mask_image = app.main_app.LOGO
-                            )
-                        else:
-                            file = QRCode.make_image(
-                                back_color = app.main_app.IMAGE_COLOR, 
-                                fill_color = app.main_app.BG_COLOR, 
-                                module_drawer = app.main_app.MODULE_DRAWER, 
-                                image_factory = StyledPilImage
-                            )
-
-                    if not app.main_app.MODULE_DRAWER and not app.main_app.GRADIENT:
-                        if app.main_app.LOGO:
-                            file = QRCode.make_image(
-                                back_color = app.main_app.IMAGE_COLOR, 
-                                fill_color = app.main_app.BG_COLOR,
-                                image_factory = StyledPilImage,
-                                color_mask = ImageColorMask(back_color = (255, 255, 255)),
-                                color_mask_image = app.main_app.LOGO
-                            )
-                        else:
-                            file = QRCode.make_image(
-                                back_color = app.main_app.IMAGE_COLOR,
-                                fill_color = app.main_app.BG_COLOR
-                            )
-
-                    
-
-                    if reg == True:
-                        file.save(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}/{entry._textvariable.get()}")
-                        app.main_app.IMAGE_LABEL = ctk.CTkLabel(
-                            master = app.main_app.QR_CODE_FRAME, 
-                            text = "", 
-                            image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}/{entry._textvariable.get()}"), size = (280, 280))
+                        )                           
+                    else:
+                        file = QRCode.make_image(
+                            back_color = app.main_app.IMAGE_COLOR, 
+                            fill_color = app.main_app.BG_COLOR, 
+                            image_factory = StyledPilImage,
+                            color_mask = app.main_app.GRADIENT
                         )
-                    if reg == False:
-                        file.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{entry._textvariable.get()}")
-                        app.main_app.IMAGE_LABEL = ctk.CTkLabel(
-                            master = app.main_app.QR_CODE_FRAME, 
-                            text = "", 
-                            image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{entry._textvariable.get()}"), size = (280, 280))
+                if app.main_app.MODULE_DRAWER:
+                    if app.main_app.LOGO:
+                        file = QRCode.make_image(
+                            back_color = app.main_app.IMAGE_COLOR, 
+                            fill_color = app.main_app.BG_COLOR,
+                            image_factory = StyledPilImage,
+                            color_mask = ImageColorMask(color_mask_image =  app.main_app.LOGO)
+                        )
+                    else:
+                        file = QRCode.make_image(
+                            back_color = app.main_app.IMAGE_COLOR, 
+                            fill_color = app.main_app.BG_COLOR, 
+                            module_drawer = app.main_app.MODULE_DRAWER, 
+                            image_factory = StyledPilImage
+                        )
+                if not app.main_app.MODULE_DRAWER and not app.main_app.GRADIENT:
+                    if app.main_app.LOGO:
+                        print(app.main_app.LOGO)
+
+                        file = QRCode.make_image(
+                            back_color = app.main_app.IMAGE_COLOR, 
+                            fill_color = app.main_app.BG_COLOR,
+                            image_factory = StyledPilImage,
+                            color_mask = ImageColorMask(color_mask_image = app.main_app.LOGO)
                         )
 
-                    app.main_app.IMAGE_LABEL.place(x = 0, y = 0)
 
-                    app.main_app.MODULE_DRAWER = None
-                    app.main_app.GRADIENT = None
-                    app.main_app.BG_COLOR = (0, 0, 0)
-                    app.main_app.IMAGE_COLOR = (255, 255, 255)
-                    app.main_app.LOGO = None
+                    else:
+                        file = QRCode.make_image(
+                            back_color = app.main_app.IMAGE_COLOR,
+                            fill_color = app.main_app.BG_COLOR
+                        )
+                
+                if reg == True:
+                    file.save(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}/{entry._textvariable.get()}")
+                    app.main_app.IMAGE_LABEL = ctk.CTkLabel(
+                        master = app.main_app.QR_CODE_FRAME, 
+                        text = "", 
+                        image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}/{entry._textvariable.get()}"), size = (280, 280))
+                    )
+                if reg == False:
+                    file.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{entry._textvariable.get()}")
+                    app.main_app.IMAGE_LABEL = ctk.CTkLabel(
+                        master = app.main_app.QR_CODE_FRAME, 
+                        text = "", 
+                        image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{entry._textvariable.get()}"), size = (280, 280))
+                    )
 
-                    win1.destroy()
+                app.main_app.IMAGE_LABEL.place(x = 0, y = 0)
+                app.main_app.MODULE_DRAWER = None
+                app.main_app.GRADIENT = None
+                app.main_app.BG_COLOR = (0, 0, 0)
+                app.main_app.IMAGE_COLOR = (255, 255, 255)
+                app.main_app.LOGO = None
+                win1.destroy()
 
-                except:
-                    print("Помилка")
+                # except:
+                #     print("Помилка")
         
-        bb = ctk.CTkButton(
+        button = ctk.CTkButton(
             master = win1,
             width = 100,
             height = 75,
@@ -191,16 +242,16 @@ def make_qrcode():
             command = onButtonPressed
         )
 
-        bb.place(x = 217, y = 170)
+        button.place(x = 217, y = 170)
 
         
 
 def bg_color():
-    win = ctk.CTkToplevel(app.main_app)
+    win = ctk.CTkToplevel()
     win.resizable(False, False)
     win.geometry(f"{545}x{270}+{0}+{0}")
     win.title("Колір фону")
-    win.focus()
+    win.attributes("-topmost", True)
     
     frame = ctk.CTkFrame(
         master = win, 
@@ -273,11 +324,11 @@ def bg_color():
 
 
 def image_color():
-    win = ctk.CTkToplevel(app.main_app)
+    win = ctk.CTkToplevel()
     win.resizable(False, False)
     win.geometry(f"{545}x{270}+{0}+{0}")
     win.title("Колір зображення")
-    win.focus()
+    win.attributes("-topmost", True)
 
     frame = ctk.CTkFrame(
         master = win, 
@@ -348,11 +399,15 @@ def image_color():
     frame.place(x = 5, y = 5)
 
 def logo():
-    win = ctk.CTkToplevel(app.main_app)
+    win = ctk.CTkToplevel()
     win.resizable(False, False)
-    win.geometry(f"{545}x{270}+{0}+{0}")
+    win.geometry(f"{545}x{270}")
     win.title("Логотип")
-    win.focus()
+    win.attributes("-topmost", True)
+    
+    # win.focus_force()
+    # win.grab_set()
+    # win.grab_release()
 
     def find_path():
         filename = ctk.filedialog.askopenfilename(filetypes = [("PNG", ".png"), ("JPEG", ".jpg .jpeg"), ("SVG", ".svg")])
@@ -396,7 +451,7 @@ def design():
     win.resizable(False, False)
     win.geometry(f"{545}x{270}+{0}+{0}")
     win.title("Логотип")
-    win.focus()
+    win.attributes("-topmost", True)
     
     def gradient():
         button_module_drawer.place_forget()
@@ -640,9 +695,10 @@ def design():
     button_gradient.place(x = 10, y = 140)
 
 def history():
+    global counter
     app.main_app.APP_FRAME.place_forget()
     app.main_app.HISTORY_FRAME.place(x = 5, y = 5)
-    counter = 0
+    
     for filename in os.listdir(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}"):
         if filename != "avatar.png":
             label = ctk.CTkLabel(master = app.main_app.SCROLLABLE_FRAME, text = filename, font = ctk.CTkFont("Arial", 30))
@@ -662,7 +718,8 @@ def avatar():
     image.resize((147, 147))
     image = image.save(fp = f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/avatar.png")
     app.main_app.AVATAR_IMAGE = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/avatar.png"), size = (115, 115))
-    app.main_app.AVATAR_LABEL.place_forget()
+    if app.main_app.AVATAR_LABEL:
+        app.main_app.AVATAR_LABEL.place_forget()
     app.main_app.AVATAR_LABEL = ctk.CTkLabel(master = app.main_app.AVATAR_FRAME, image = app.main_app.AVATAR_IMAGE, text = "")
     app.main_app.AVATAR_LABEL.place(x = 17, y = 17)
 
