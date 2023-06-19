@@ -85,8 +85,8 @@ class App(ctk.CTk):
         )
         self.URL_ENTRY.place(x = 20, y = 60)
 
-        self.QR_CODE_FRAME = ctk.CTkFrame(master = self.APP_FRAME, width = 280, height = 280, corner_radius = 20, border_width = 3, border_color = "#911CEE")
-        self.QR_CODE_FRAME.place(x = 700, y = 280)
+        self.QR_CODE_FRAME = ctk.CTkFrame(master = self.APP_FRAME, width = 380, height = 380, corner_radius = 20, border_width = 3, border_color = "#911CEE")
+        self.QR_CODE_FRAME.place(x = 600, y = 200)
         
         self.HISTORY_FRAME = ctk.CTkFrame(
             master = self,
@@ -128,6 +128,7 @@ class App(ctk.CTk):
 
 
         # print("ексепт")
+        self.FILE = None
 
         self.IMAGE_LABEL = None
         self.BG_COLOR = (0, 0, 0)

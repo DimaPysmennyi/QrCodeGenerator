@@ -91,7 +91,7 @@ img_color_btn = ctk.CTkButton(
 
 logo_qr_code_btn = ctk.CTkButton(
     master = appa.main_app.APP_FRAME,
-    text = "Додати логотип до QR коду",
+    text = "Додати картинку до QR коду",
     width = 480,
     height = 70,
     corner_radius = 20,
@@ -122,7 +122,7 @@ design_img_qr_code_btn = ctk.CTkButton(
 qr_code_btn = ctk.CTkButton(
     master = appa.main_app.APP_FRAME,
     text = "Створити QR код",
-    width = 480,
+    width = 380,
     height = 70,
     corner_radius = 20,
     border_width = 3,
@@ -135,7 +135,7 @@ qr_code_btn = ctk.CTkButton(
 history_btn = ctk.CTkButton(
     master = appa.main_app.APP_FRAME,
     text = "Історія",
-    width = 280,
+    width = 480,
     height = 70,
     corner_radius = 20,
     border_width = 3,
@@ -171,6 +171,19 @@ avatar_btn = ctk.CTkButton(
     command = btn_func.avatar
     )
 
+obnovit_cod_koroche = ctk.CTkButton(
+    master = appa.main_app.APP_FRAME,
+    text = "Оновити це гiмно",
+    width = 380,
+    height = 70,
+    corner_radius = 20,
+    border_width = 3,
+    border_color = "#911CEE",
+    fg_color = "#343638",
+    hover_color = "#29292a",
+    command = btn_func.make_qrcode
+)
+
 verify_registration_btn.place(x = 440, y = 540)
 verify_authorization_btn.place(x = 430, y = 490)
 auth_btn.place(x = 440, y = 600)
@@ -179,7 +192,7 @@ bg_color_btn.place(x = 20, y = 170)
 img_color_btn.place(x = 20, y = 280)
 logo_qr_code_btn.place(x = 20, y = 390)
 design_img_qr_code_btn.place(x = 20, y = 500)
-qr_code_btn.place(x = 20, y = 610)
-history_btn.place(x = 700, y = 610)
+history_btn.place(x = 20, y = 610)
+qr_code_btn.place(x = 600, y = 610)
 back_btn.place(x = 400, y = 50)
 avatar_btn.place(x = 780, y = 20)
