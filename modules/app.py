@@ -131,8 +131,8 @@ class App(ctk.CTk):
         self.FILE = None
 
         self.IMAGE_LABEL = None
-        self.BG_COLOR = (0, 0, 0)
-        self.IMAGE_COLOR = (255, 255, 255)
+        self.BG_COLOR = (255, 255, 255)
+        self.IMAGE_COLOR = (0,0,0)
         self.LOGO = None
         self.GRADIENT = None
         self.MODULE_DRAWER = None

@@ -171,19 +171,6 @@ avatar_btn = ctk.CTkButton(
     command = btn_func.avatar
     )
 
-obnovit_cod_koroche = ctk.CTkButton(
-    master = appa.main_app.APP_FRAME,
-    text = "Оновити це гiмно",
-    width = 380,
-    height = 70,
-    corner_radius = 20,
-    border_width = 3,
-    border_color = "#911CEE",
-    fg_color = "#343638",
-    hover_color = "#29292a",
-    command = btn_func.make_qrcode
-)
-
 verify_registration_btn.place(x = 440, y = 540)
 verify_authorization_btn.place(x = 430, y = 490)
 auth_btn.place(x = 440, y = 600)

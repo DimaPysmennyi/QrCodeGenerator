@@ -18,6 +18,16 @@ reg = None
 email_check = False
 username_check = False
 
+def hex_to_rgb(hex):
+    rgb = []
+    for i in (0, 2, 4):
+      decimal = int(hex[i:i+2], 16)
+      rgb.append(decimal)
+    
+    return tuple(rgb)
+
+
+
 filename = None
 
 QRCode = qrcode.QRCode(
@@ -26,6 +36,8 @@ QRCode = qrcode.QRCode(
     box_size = 10
 )
 
+
+
 def qrcode_update():
     if app.main_app.GRADIENT:
         if app.main_app.LOGO:
@@ -33,8 +45,11 @@ def qrcode_update():
                 fill_color = app.main_app.IMAGE_COLOR, 
                 back_color = app.main_app.BG_COLOR,
                 image_factory = StyledPilImage,
-                color_mask = ImageColorMask(color_mask_image = app.main_app.LOGO)      
+                color_mask = ImageColorMask(color_mask_image = app.main_app.LOGO, back_color = app.main_app.BG_COLOR)      
             )                     
+
+            app.main_app.FILE.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{filename}")
+            
         else:
             app.main_app.FILE = QRCode.make_image(
                 fill_color = app.main_app.IMAGE_COLOR, 
@@ -42,32 +57,40 @@ def qrcode_update():
                 image_factory = StyledPilImage,
                 color_mask = app.main_app.GRADIENT
             )
+
+            app.main_app.FILE.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{filename}")
             
     if app.main_app.MODULE_DRAWER:
         if app.main_app.LOGO:
             app.main_app.FILE = QRCode.make_image(
-                fill_color = app.main_app.IMAGE_COLOR, 
                 back_color = app.main_app.BG_COLOR,
                 image_factory = StyledPilImage,
-                color_mask = ImageColorMask(color_mask_image =  app.main_app.LOGO)
+                color_mask = ImageColorMask(color_mask_image =  app.main_app.LOGO, back_color = app.main_app.BG_COLOR),
+                module_drawer = app.main_app.MODULE_DRAWER
             )
+
+            app.main_app.FILE.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{filename}")
 
         else:
             app.main_app.FILE = QRCode.make_image(
                 fill_color = app.main_app.IMAGE_COLOR, 
                 back_color = app.main_app.BG_COLOR, 
-                module_drawer = app.main_app.MODULE_DRAWER, 
-                image_factory = StyledPilImage
+                image_factory = StyledPilImage,
+                module_drawer = app.main_app.MODULE_DRAWER
             )
 
-    else:
+            app.main_app.FILE.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{filename}")
+
+    if not app.main_app.GRADIENT and not app.main_app.MODULE_DRAWER:
         if app.main_app.LOGO:
             app.main_app.FILE = QRCode.make_image(
                 fill_color = app.main_app.IMAGE_COLOR, 
                 back_color = app.main_app.BG_COLOR,
                 image_factory = StyledPilImage,
-                color_mask = ImageColorMask(color_mask_image =  app.main_app.LOGO)
+                color_mask = ImageColorMask(color_mask_image =  app.main_app.LOGO, back_color = app.main_app.BG_COLOR)
             )
+
+            app.main_app.FILE.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{filename}")
 
         else:
             app.main_app.FILE = QRCode.make_image(
@@ -128,6 +151,8 @@ def verify_registration():
                             label = ctk.CTkLabel(master = win, text = "Вас успішно зареєстровано!", font = ctk.CTkFont("Arial", 17))
                             label.place(x = 5, y = 40)
                             win.mainloop()
+                            app.main_app.REGISTRATION_FRAME.place_forget()
+                            app.main_app.AUTHORIZATION_FRAME.place(x = 5, y = 5)
 
 
                             email_sender = "qrcodeapppractice@gmail.com"
@@ -195,65 +220,79 @@ def register_tab():
 
 def make_qrcode():
     if app.main_app.URL_ENTRY._textvariable.get():
-        win1 = ctk.CTkToplevel(app.main_app)
-        win1.resizable(False, False)
-        win1.geometry(f"{545}x{270}+{app.main_app.winfo_x()+267}+{app.main_app.winfo_y()+225}")
-        win1.title("Збереження")
-        win1.attributes("-topmost", True)
-        if not app.main_app.FILE:
-            entry = ctk.CTkEntry(
-                master = win1, 
-                width = 400, height = 150, 
-                textvariable = ctk.StringVar(), 
-                border_color = "#911CEE", 
-                font = ctk.CTkFont("Arial", 30),
-                corner_radius=20
-            )
+        win1 = ctk.CTkInputDialog(title = "Збереження", text = "Введіть ім'я файлу:")
+        win1._button_fg_color = "#343638"
+        win1._button_hover_color = "#29292a"
+        text = win1.get_input()
 
-            
-        
-        entry.place(x = 67, y = 10)
+        # win1.geometry(f"{545}x{270}+{app.main_app.winfo_x()+267}+{app.main_app.winfo_y()+225}")
         
         def onButtonPressed():
             global filename
-            if entry._textvariable.get():
-                QRCode.add_data(app.main_app.URL_ENTRY._textvariable.get())
-                QRCode.make(True)
-                
+            try:
+                png = text[-4]+ text[-3]+ text[-2] + text[-1] == ".png"
+                jpg = text[-4]+ text[-3]+ text[-2] + text[-1] == ".jpg"
+                svg = text[-4]+ text[-3]+ text[-2] + text[-1] == ".svg"
+            
+            except IndexError:
+                win = ctk.CTkToplevel()
+                win.resizable(False, False)
+                win.geometry(f"{545}x{270}+{app.main_app.winfo_x()+267}+{app.main_app.winfo_y()+225}")
+                win.title("Помилка")
+                win.attributes("-topmost", True)
+                label = ctk.CTkLabel(master = win, text = "Некоректне ім'я файлу!", anchor = "center")
+                label.place(relx = 0.4, rely = 0.4)
+            
+            try:
+                if png or jpg or svg:
+                    try:
+                        QRCode.add_data(app.main_app.URL_ENTRY._textvariable.get())
+                        QRCode.make(True)
 
 
-                app.main_app.FILE = QRCode.make_image(back_color = (255, 255, 255), fill_color = (0, 0, 0))
-                app.main_app.FILE.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{entry._textvariable.get()}")
-                app.main_app.IMAGE_LABEL = ctk.CTkLabel(
-                    master = app.main_app.QR_CODE_FRAME, 
-                    text = "", 
-                    image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{entry._textvariable.get()}"), size = (380, 380))
-                )
-                filename = entry._textvariable.get()
+
+                        app.main_app.FILE = QRCode.make_image(back_color = (255, 255, 255), fill_color = (0, 0, 0))
+                        app.main_app.FILE.save(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{text}")
+                        app.main_app.IMAGE_LABEL = ctk.CTkLabel(
+                            master = app.main_app.QR_CODE_FRAME, 
+                            text = "", 
+                            image = ctk.CTkImage(light_image = Image.open(f"users/{app.main_app.ENTRY_USERNAME_AUTH._textvariable.get()}/{text}"), size = (380, 380))
+                        )
+                        filename = text
 
 
-                app.main_app.IMAGE_LABEL.place(x = 0, y = 0)
+                        app.main_app.IMAGE_LABEL.place(x = 0, y = 0)
 
-                win1.destroy()
+                        win1.destroy()
 
-        if app.main_app.FILE:
-            app.main_app.FILE.save(f"users/{app.main_app.ENTRY_LOGIN._textvariable.get()}/{filename}")
-                #     print("Помилка")
+                        app.main_app.BG_COLOR = (255,255,255)
+                        app.main_app.IMAGE_COLOR = (0,0,0)
+                        app.main_app.LOGO = None
+                        app.main_app.GRADIENT = None
+                        app.main_app.MODULE_DRAWER = None
 
-        button = ctk.CTkButton(
-            master = win1,
-            width = 100,
-            height = 75,
-            corner_radius = 20,
-            border_width = 3,
-            border_color = "#911CEE",
-            fg_color = "#343638",
-            hover_color = "#29292a",
-            text = "Пiдтвердити",
-            command = onButtonPressed
-        )
+                    #     print("Помилка")
+                    except:
+                        win = ctk.CTkToplevel()
+                        win.resizable(False, False)
+                        win.geometry(f"{545}x{270}+{app.main_app.winfo_x()+267}+{app.main_app.winfo_y()+225}")
+                        win.title("Помилка")
+                        win.attributes("-topmost", True)
+                        label = ctk.CTkLabel(master = win, text = "Некоректне ім'я файлу!", anchor = "center")
+                        label.place(relx = 0.4, rely = 0.4)
+                else:
+                    win = ctk.CTkToplevel()
+                    win.resizable(False, False)
+                    win.geometry(f"{545}x{270}+{app.main_app.winfo_x()+267}+{app.main_app.winfo_y()+225}")
+                    win.title("Помилка")
+                    win.attributes("-topmost", True)
+                    label = ctk.CTkLabel(master = win, text = "Некоректне ім'я файлу!", anchor = "center")
+                    label.place(relx = 0.4, rely = 0.4)
+            except:
+                pass
 
-        button.place(x = 217, y = 170)
+        onButtonPressed()
+       
 
         
 
@@ -276,7 +315,8 @@ def bg_color():
     color_picker.slider._button_color = "#911CEE"
     color_picker.slider._button_hover_color = "#4c2b62"
     color = color_picker.get()
-    app.main_app.BG_COLOR = color
+    # color.replace("#", "")
+    app.main_app.BG_COLOR = hex_to_rgb(color.replace("#", ""))
     qrcode_update()
 
 
@@ -294,7 +334,8 @@ def image_color():
     color_picker.slider._button_hover_color = "#4c2b62"
 
     color = color_picker.get()
-    app.main_app.IMAGE_COLOR = color
+    # color.replace("#", "")
+    app.main_app.IMAGE_COLOR = hex_to_rgb(color.replace("#", ""))
     qrcode_update()
 
 def logo():
@@ -314,6 +355,8 @@ def logo():
 
         frame.place_forget()
         win.destroy()
+
+        qrcode_update()
 
     frame = ctk.CTkFrame(
         master = win, 
@@ -341,7 +384,7 @@ def logo():
     find_path_btn.place(x = 100, y = 80)
 
     frame.place(x = 5, y = 5)
-    qrcode_update()
+    
     # app.main_app.LOGO = 
 
 
@@ -361,21 +404,25 @@ def design():
             app.main_app.GRADIENT = RadialGradiantColorMask()
             frame.place_forget()
             win.destroy()
+            qrcode_update()
 
         def square_gradient():
             app.main_app.GRADIENT = SquareGradiantColorMask()
             frame.place_forget()
             win.destroy()
+            qrcode_update()
 
         def horizontal_gradient():
             app.main_app.GRADIENT = HorizontalGradiantColorMask()
             frame.place_forget()
             win.destroy()
+            qrcode_update()
 
         def vertical_gradient():
             app.main_app.GRADIENT = VerticalGradiantColorMask()
             frame.place_forget()
             win.destroy()
+            qrcode_update()
 
         # def image_color_mask():
         #     app.main_app.GRADIENT = ImageColorMask()
@@ -452,7 +499,7 @@ def design():
         button_horizontal_gradient.place(x = 10,y = 100)
         button_vertical_gradient.place(x = 10,y = 140)
         # button_image_color_mask.place(x = 10,y = 180)     
-        qrcode_update()
+        # qrcode_update()
 
     def module_drawer():
         button_module_drawer.place_forget()
@@ -462,26 +509,31 @@ def design():
             app.main_app.MODULE_DRAWER = GappedSquareModuleDrawer()
             frame.place_forget()
             win.destroy()
+            qrcode_update()
         
         def circle_module():
             app.main_app.MODULE_DRAWER = CircleModuleDrawer()
             frame.place_forget()
             win.destroy()
+            qrcode_update()
 
         def rounded():
             app.main_app.MODULE_DRAWER = RoundedModuleDrawer()
             frame.place_forget()
             win.destroy()
+            qrcode_update()
         
         def vertical_bars():
             app.main_app.MODULE_DRAWER = VerticalBarsDrawer()
             frame.place_forget()
             win.destroy()
+            qrcode_update()
 
         def horizontal_bars():
             app.main_app.MODULE_DRAWER = HorizontalBarsDrawer()
             frame.place_forget()
             win.destroy()
+            qrcode_update()
 
         button_gapped_square = ctk.CTkButton(
             master = frame, 
@@ -553,7 +605,7 @@ def design():
         button_rounded.place(x = 10, y =100)
         button_vertical_bars.place(x = 10, y = 140)
         button_horizontal_bars.place(x = 10, y = 180)
-        qrcode_update()
+        # qrcode_update()
     
     frame = ctk.CTkFrame(
         master= win, 
